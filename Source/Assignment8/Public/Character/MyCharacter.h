@@ -14,13 +14,28 @@ class ASSIGNMENT8_API AMyCharacter : public ACharacter
 	GENERATED_BODY()
 public:
 	AMyCharacter();
-protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera")
 	USpringArmComponent* SpringArmComp;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	UCameraComponent* CameraComp;
+#pragma region Health
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
+	float MaxHealth;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Health")
+	float Health;
+
+	UFUNCTION(BlueprintCallable, Category = "Health")
+	virtual void OnDeath();
+
+	UFUNCTION(BlueprintPure, Category = "Health")
+	int32 GetHealth() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Health")
+	void AddHealth(float Amount);
+#pragma endregion
 
 #pragma region Action
 	UFUNCTION()
@@ -46,10 +61,6 @@ protected:
 	float SprintSpeed;
 #pragma endregion
 
-	
-	
-public:	
-	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 };

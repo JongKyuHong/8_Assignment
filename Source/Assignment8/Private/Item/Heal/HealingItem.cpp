@@ -1,0 +1,20 @@
+﻿#include "Item/Heal/HealingItem.h"
+#include "Character/MyCharacter.h"
+
+AHealingItem::AHealingItem()
+{
+    HealAmount = 20.0f;
+    ItemType = "Healing";
+}
+
+void AHealingItem::ActivateItem(AActor* Activator)
+{
+    if (Activator && Activator->ActorHasTag("Player"))
+    {
+        if (AMyCharacter* PlayerCharacter = Cast<AMyCharacter>(Activator))
+        {
+            PlayerCharacter->AddHealth(HealAmount);
+            DestroyItem();
+        }
+    }
+}
