@@ -6,6 +6,8 @@
 
 class UInputMappingContext;
 class UInputAction;
+class UPerkDataAsset;
+class UPerkManagerComponent;
 
 UCLASS()
 class ASSIGNMENT8_API AMyPlayerController : public APlayerController
@@ -59,6 +61,21 @@ public:
 
 		UFUNCTION(BlueprintCallable, Category = "Menu")
 		void StartGame();
+	#pragma endregion
+
+
+	#pragma region Perk
+		UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI|Perk")
+		TSubclassOf<UUserWidget> PerkWidgetClass;
+
+		UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI|Perk")
+		UPerkDataAsset* MyPerkDataAsset;
+
+		UPROPERTY(EditAnywhere, Category="UI|Perk")
+		UPerkManagerComponent* PerkManager;
+
+		UFUNCTION(BlueprintCallable, Category = "UI|Perk")
+		void ShowPerkUI();
 	#pragma endregion
 
 	virtual void BeginPlay() override;

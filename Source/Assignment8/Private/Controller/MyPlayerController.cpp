@@ -2,6 +2,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Blueprint/UserWidget.h"
 #include "GameState/MyGameState.h"
+#include "DataAsset/PerkManagerComponent.h"
 #include "GameInstance/MyGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/TextBlock.h"
@@ -16,8 +17,10 @@ AMyPlayerController::AMyPlayerController() :
     HUDWidgetClass(nullptr),
     HUDWidgetInstance(nullptr),
     MainMenuWidgetClass(nullptr),
-    MainMenuWidgetInstance(nullptr)
+    MainMenuWidgetInstance(nullptr),
+    PerkManager(nullptr)
 {
+    PerkManager = CreateDefaultSubobject<UPerkManagerComponent>(TEXT("PerkManagerComponent"));
 }
 
 void AMyPlayerController::BeginPlay()
@@ -146,4 +149,30 @@ void AMyPlayerController::StartGame()
     }
 
     UGameplayStatics::OpenLevel(GetWorld(), FName("BasicLevel"));
+}
+
+void AMyPlayerController::ShowPerkUI()
+{
+    if (PerkWidgetClass && MyPerkDataAsset)
+    {
+        FPerkRollResult Options = PerkManager->RollPerkOptions(MyPerkDataAsset);
+
+        UUserWidget* PerkWidget = CreateWidget<UUserWidget>(this, PerkWidgetClass);
+        if (PerkWidget) 
+        {
+            PerkWidget->AddToViewport();
+
+            FName FuncName = FName("UpdatePerkDisplay");
+            UFunction* UpdateFunc = PerkWidget->FindFunction(FuncName);
+            if (UpdateFunc)
+            {
+                PerkWidget->ProcessEvent(UpdateFunc, &Options);
+            }
+
+            SetInputMode(FInputModeUIOnly());
+            bShowMouseCursor = true;
+            SetPause(true);
+        }
+ 
+    }
 }
