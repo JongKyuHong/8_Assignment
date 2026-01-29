@@ -12,4 +12,6 @@ ASmallCoinItem::ASmallCoinItem()
 void ASmallCoinItem::ActivateItem(AActor* Activator)
 {
     Super::ActivateItem(Activator);
+
+
 }

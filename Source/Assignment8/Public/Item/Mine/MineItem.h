@@ -14,6 +14,13 @@ public:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item|Component")
     USphereComponent* ExplosionCollision;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Effects")
+    UParticleSystem* ExplosionParticle;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Effects")
+    USoundBase* ExplosionSound;
+
+    bool bHasExploded;
+
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mine")
     float ExplosionDelay;

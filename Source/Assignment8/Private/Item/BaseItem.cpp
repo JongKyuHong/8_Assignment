@@ -1,5 +1,7 @@
 ﻿#include "Item/BaseItem.h"
 #include "Components/SphereComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystemComponent.h"
 
 ABaseItem::ABaseItem()
 {
@@ -19,6 +21,8 @@ ABaseItem::ABaseItem()
 
     Collision->OnComponentBeginOverlap.AddDynamic(this, &ABaseItem::OnItemOverlap);
     Collision->OnComponentEndOverlap.AddDynamic(this, &ABaseItem::OnItemEndOverlap);
+
+    ParticleDestroyDelay = 2.0f;
 }
 
 void ABaseItem::OnItemOverlap(
@@ -31,7 +35,6 @@ void ABaseItem::OnItemOverlap(
 {
     if (OtherActor && OtherActor->ActorHasTag("Player"))
     {
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("Overlap!!!")));
         ActivateItem(OtherActor);
     }
 }
@@ -46,7 +49,47 @@ void ABaseItem::OnItemEndOverlap(
 
 void ABaseItem::ActivateItem(AActor* Activator)
 {
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("Overlap!!")));
+    UParticleSystemComponent* Particle = nullptr;
+    UE_LOG(LogTemp, Warning, TEXT("ActivateItem Called by: %s"), *Activator->GetName());
+    if (PickupParticle)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Particle Asset is Valid!"));
+        Particle = UGameplayStatics::SpawnEmitterAtLocation(
+            GetWorld(),
+            PickupParticle,
+            GetActorLocation(),
+            GetActorRotation(),
+            true
+        );
+    }
+
+    if (PickupSound)
+    {
+        UGameplayStatics::PlaySoundAtLocation(
+            GetWorld(),
+            PickupSound,
+            GetActorLocation()
+        );
+    }
+
+    if (Particle)
+	{
+	    FTimerHandle DestroyParticleTimerHandle;
+	    TWeakObjectPtr<UParticleSystemComponent> WeakParticle = Particle;
+						
+	    GetWorld()->GetTimerManager().SetTimer(
+		    DestroyParticleTimerHandle,
+		    [WeakParticle]()
+		    {
+				    if (WeakParticle.IsValid())
+				    {
+						    WeakParticle->DestroyComponent();
+				    }
+		    },
+            ParticleDestroyDelay,
+		    false
+	    );
+	}
 }
 
 void ABaseItem::DestroyItem()

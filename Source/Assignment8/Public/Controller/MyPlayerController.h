@@ -14,7 +14,7 @@ class ASSIGNMENT8_API AMyPlayerController : public APlayerController
 public:
 	AMyPlayerController();
 
-#pragma region Input
+	#pragma region Input
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	UInputMappingContext* InputMappingContext;
 
@@ -35,11 +35,31 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="UI")
 	TSubclassOf<UUserWidget> HUDWidgetClass;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HUD")
-	UUserWidget* HUDWidgetInstance;
+	#pragma region HUD
+		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HUD")
+		UUserWidget* HUDWidgetInstance;
 
-	UFUNCTION(BlueprintPure, Category = "HUD")
-	UUserWidget* GetHUDWidget() const;
+		UFUNCTION(BlueprintPure, Category = "HUD")
+		UUserWidget* GetHUDWidget() const;
+
+		UFUNCTION(BlueprintCallable, Category = "HUD")
+		void ShowGameHUD();
+	#pragma endregion
+
+	#pragma region Menu
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Menu")
+		TSubclassOf<UUserWidget> MainMenuWidgetClass;
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Menu")
+		UUserWidget* MainMenuWidgetInstance;
+
+
+		UFUNCTION(BlueprintCallable, Category = "Menu")
+		void ShowMainMenu(bool bIsRestart);
+
+		UFUNCTION(BlueprintCallable, Category = "Menu")
+		void StartGame();
+	#pragma endregion
 
 	virtual void BeginPlay() override;
 	

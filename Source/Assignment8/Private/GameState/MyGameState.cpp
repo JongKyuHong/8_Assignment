@@ -3,9 +3,11 @@
 #include "Spawn/SpawnVolume.h"
 #include "Item/Coin/CoinItem.h"
 #include "Controller/MyPlayerController.h"
+#include "Character/MyCharacter.h"
 #include "GameInstance/MyGameInstance.h"
 #include "Components/TextBlock.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/ProgressBar.h"
 
 AMyGameState::AMyGameState()
 {
@@ -52,6 +54,15 @@ void AMyGameState::AddScore(int32 Amount)
 
 void AMyGameState::StartLevel()
 {
+    if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
+    {
+        if (AMyPlayerController* MyPlayerController = Cast<AMyPlayerController>(PlayerController))
+        {
+            MyPlayerController->ShowGameHUD();
+        }
+    }
+
+
     if (UGameInstance* GameInstance = GetGameInstance())
     {
         UMyGameInstance* MyGameInstance = Cast<UMyGameInstance>(GameInstance);
@@ -93,14 +104,11 @@ void AMyGameState::StartLevel()
         LevelDuration,
         false
     );
-
-    UE_LOG(LogTemp, Warning, TEXT("Level %d Start!, Spawned %d coin"), 
-        CurrentLevelIndex + 1, 
-        SpawnedCoinCount);
 }
 
 void AMyGameState::OnLevelTimeUp()
 {
+    // 얻은 코인의 개수가 스폰된것과 같으면 종료
     EndLevel();
 }
 
@@ -108,9 +116,6 @@ void AMyGameState::OnCoinCollected()
 {
     CollectedCoinCount++;
 
-    UE_LOG(LogTemp, Warning, TEXT("Coin Collected: %d / %d"),
-        CollectedCoinCount,
-        SpawnedCoinCount);
     if (SpawnedCoinCount > 0 && CollectedCoinCount >= SpawnedCoinCount)
     {
         EndLevel();
@@ -129,28 +134,34 @@ void AMyGameState::EndLevel()
             AddScore(Score);
             CurrentLevelIndex++;
             MyGameInstance->CurrentLevelIndex = CurrentLevelIndex;
+
+            if (CurrentLevelIndex >= MaxLevels)
+            {
+                OnGameOver();
+                return;
+            }
+
+            if (LevelMapNames.IsValidIndex(CurrentLevelIndex))
+            {
+                UGameplayStatics::OpenLevel(GetWorld(), LevelMapNames[CurrentLevelIndex]);
+            } else
+            {
+                OnGameOver();
+            }
         }
-    }
-
-    if (CurrentLevelIndex >= MaxLevels)
-    {
-        OnGameOver();
-        return;
-    }
-
-    if (LevelMapNames.IsValidIndex(CurrentLevelIndex))
-    {
-        UGameplayStatics::OpenLevel(GetWorld(), LevelMapNames[CurrentLevelIndex]);
-    } 
-    else
-    {
-        OnGameOver();
     }
 }
 
 void AMyGameState::OnGameOver()
 {
-    UE_LOG(LogTemp, Warning, TEXT("Game Over!!"));
+    if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
+    {
+        if (AMyPlayerController* MyPlayerController = Cast<AMyPlayerController>(PlayerController))
+        {
+            MyPlayerController->SetPause(true);
+            MyPlayerController->ShowMainMenu(true);
+        }
+    }
 }
 
 void AMyGameState::UpdateHUD()
@@ -175,6 +186,22 @@ void AMyGameState::UpdateHUD()
                         if (MyGameInstance)
                         {
                             ScoreText->SetText(FText::FromString(FString::Printf(TEXT("Score: %d"), MyGameInstance->TotalScore)));
+                        }
+                    }
+                }
+
+                if (UProgressBar* HealthBar = Cast<UProgressBar>(HUDWidget->GetWidgetFromName(TEXT("HealthBar"))))
+                {
+                    if (APawn* PlayerPawn = MyPlayerController->GetPawn())
+                    {
+                        if (AMyCharacter* PlayerCharacter = Cast<AMyCharacter>(PlayerPawn))
+                        {
+                            float CurrentHP = PlayerCharacter->GetHealth();
+                            float MaxHP = PlayerCharacter->MaxHealth;
+
+                            float HealthRatio = MaxHP > 0 ? CurrentHP / MaxHP : 0.f;
+
+                            HealthBar->SetPercent(HealthRatio);
                         }
                     }
                 }

@@ -1,13 +1,15 @@
 ﻿#include "Item/Mine/MineItem.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/SphereComponent.h"
+#include "Particles/ParticleSystemComponent.h"
 
 AMineItem::AMineItem()
 {
-    ExplosionDelay = 5.0f;
+    ExplosionDelay = 2.0f;
     ExplosionRadius = 300.0f;
     ExplosionDamage = 30.0f;
     ItemType = "Mine";
+	bHasExploded = false;
 
     ExplosionCollision = CreateDefaultSubobject<USphereComponent>(TEXT("ExplosionCollision"));
     ExplosionCollision->InitSphereRadius(ExplosionRadius);
@@ -17,6 +19,15 @@ AMineItem::AMineItem()
 
 void AMineItem::ActivateItem(AActor* Activator)
 {
+	// 이미 작동하고 있으면 무시
+	if (bHasExploded)
+	{
+		return;
+	}
+
+	bHasExploded = true;
+
+	Super::ActivateItem(Activator);
     GetWorld()->GetTimerManager().SetTimer(
         ExplosionTimerHandle,
         this,
@@ -28,6 +39,28 @@ void AMineItem::ActivateItem(AActor* Activator)
 
 void AMineItem::Explode()
 {
+	UParticleSystemComponent* Particle = nullptr;
+
+	if (ExplosionParticle)
+	{
+		Particle = UGameplayStatics::SpawnEmitterAtLocation(
+			GetWorld(),
+			ExplosionParticle,
+			GetActorLocation(),
+			GetActorRotation(),
+			true
+		);
+	}
+
+	if (ExplosionSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			GetWorld(),
+			ExplosionSound,
+			GetActorLocation()
+		);
+	}
+
 	TArray<AActor*> OverlappingActors;
 	ExplosionCollision->GetOverlappingActors(OverlappingActors);
 
@@ -46,4 +79,23 @@ void AMineItem::Explode()
 	}
 
 	DestroyItem();
+
+	if (Particle)
+	{
+		FTimerHandle DestroyParticleTimerHandle;
+		TWeakObjectPtr<UParticleSystemComponent> WeakParticle = Particle;
+
+		GetWorld()->GetTimerManager().SetTimer(
+			DestroyParticleTimerHandle,
+			[WeakParticle]()
+		{
+			if (WeakParticle.IsValid())
+			{
+				WeakParticle->DestroyComponent();
+			}
+		},
+			2.0f,
+			false
+		);
+	}
 }
