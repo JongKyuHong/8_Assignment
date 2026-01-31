@@ -4,55 +4,38 @@
 #include "Engine/DataAsset.h"
 #include "PerkDataAsset.generated.h"
 
-
 UENUM(BlueprintType)
 enum class EPerkRarity : uint8
 {
-	Silver,
-	Gold,
-	Prism
+	Silver, // 일반
+	Gold,  // 희귀
+	Prism  // 전설 느낌?, 보라~프리즘색
 };
 
-USTRUCT(BlueprintType)
-struct FPerkRarityValues
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Silver = 1.1f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Gold = 1.2f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Prism = 1.4f;
-};
-
+// 하나의 Perk이 가져야 하는 정보
 USTRUCT(BlueprintType)
 struct FPerkInfo 
 {
 	GENERATED_BODY()
 
+	// Perk이름
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FText PerkNames;
+	FText PerkNames; 
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FPerkRarityValues Multipliers;
-
+	// 이 Perk과 연동된 Gameplay Effect클래스
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<class UGameplayEffect> PerkEffectClass;
 };
 
+// 무작위로 3개의 특성을 가져옴 / 화면에 전달되는 단위
 USTRUCT(BlueprintType)
 struct FPerkRollResult
 {
 	GENERATED_BODY()
 
+	// 선택된 3개의 퍽들
 	UPROPERTY(BlueprintReadWrite)
 	TArray<FPerkInfo> SelectedPerks;
-
-	UPROPERTY(BlueprintReadOnly)
-	EPerkRarity RolledRarity;
 };
 
 UCLASS()
@@ -60,15 +43,7 @@ class ASSIGNMENT8_API UPerkDataAsset : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
 public:
+	// 모든 Perk들
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Perks")
 	TArray<FPerkInfo> AllPerks;
-
-	UPROPERTY(EditAnywhere, Category="Chances")
-	float SilverChance = 40.f;
-
-	UPROPERTY(EditAnywhere, Category = "Chances")
-	float GoldChance = 35.f;
-
-	UPROPERTY(EditAnywhere, Category = "Chances")
-	float PrismChance = 25.f;
 };

@@ -5,13 +5,10 @@ UPerkManagerComponent::UPerkManagerComponent()
 
 }
 
-
 FPerkRollResult UPerkManagerComponent::RollPerkOptions(UPerkDataAsset* DataAsset)
 {
 	FPerkRollResult Results;
 	if (!DataAsset) return Results;
-
-	Results.RolledRarity = GetRandomRarity();
 
 	TArray<FPerkInfo> Pool = DataAsset->AllPerks;
 
@@ -24,12 +21,4 @@ FPerkRollResult UPerkManagerComponent::RollPerkOptions(UPerkDataAsset* DataAsset
 	}
 
 	return Results;
-}
-
-EPerkRarity UPerkManagerComponent::GetRandomRarity()
-{
-	int32 Roll = FMath::RandRange(1, 100);
-	if (Roll <= 40) return EPerkRarity::Silver;
-	if (Roll <= 75) return EPerkRarity::Gold;
-	return EPerkRarity::Prism;
 }

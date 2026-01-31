@@ -6,7 +6,8 @@
 #include "GameInstance/MyGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/TextBlock.h"
-
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 AMyPlayerController::AMyPlayerController() :
     InputMappingContext(nullptr),
@@ -120,6 +121,13 @@ void AMyPlayerController::ShowGameHUD()
         MainMenuWidgetInstance = nullptr;
     }
 
+    if (PerkWidgetInstance)
+    {
+        SetPause(false);
+        PerkWidgetInstance->RemoveFromParent();
+        PerkWidgetInstance = nullptr;
+    }
+
     if (HUDWidgetClass)
     {
         HUDWidgetInstance = CreateWidget<UUserWidget>(this, HUDWidgetClass);
@@ -157,22 +165,21 @@ void AMyPlayerController::ShowPerkUI()
     {
         FPerkRollResult Options = PerkManager->RollPerkOptions(MyPerkDataAsset);
 
-        UUserWidget* PerkWidget = CreateWidget<UUserWidget>(this, PerkWidgetClass);
-        if (PerkWidget) 
+        PerkWidgetInstance = CreateWidget<UUserWidget>(this, PerkWidgetClass);
+        if (PerkWidgetInstance)
         {
-            PerkWidget->AddToViewport();
+            PerkWidgetInstance->AddToViewport();
 
             FName FuncName = FName("UpdatePerkDisplay");
-            UFunction* UpdateFunc = PerkWidget->FindFunction(FuncName);
+            UFunction* UpdateFunc = PerkWidgetInstance->FindFunction(FuncName);
             if (UpdateFunc)
             {
-                PerkWidget->ProcessEvent(UpdateFunc, &Options);
+                PerkWidgetInstance->ProcessEvent(UpdateFunc, &Options);
             }
 
             SetInputMode(FInputModeUIOnly());
             bShowMouseCursor = true;
             SetPause(true);
         }
- 
     }
 }

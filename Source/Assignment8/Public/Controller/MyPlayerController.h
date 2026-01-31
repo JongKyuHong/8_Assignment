@@ -69,6 +69,9 @@ public:
 		TSubclassOf<UUserWidget> PerkWidgetClass;
 
 		UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI|Perk")
+		UUserWidget* PerkWidgetInstance;
+
+		UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI|Perk")
 		UPerkDataAsset* MyPerkDataAsset;
 
 		UPROPERTY(EditAnywhere, Category="UI|Perk")

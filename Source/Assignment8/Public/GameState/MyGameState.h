@@ -22,10 +22,27 @@ public:
 	void OnCoinCollected();
 #pragma endregion
 
-	
+	#pragma region Wave
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Wave")
+	float WaveDuration;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Wave")
+	int32 CurrentWaveIndex;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Wave")
+	int32 MaxWaves;
+
+	void ShowPerkMenu() const;
+	void StartWave();
+	void OnWaveTimeUp();
+	void EndWave();
+
+	FTimerHandle WaveTimerHandle;
+#pragma endregion
+
 	#pragma region Level
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Level")
-	float LevelDuration;
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Level")
+	//float LevelDuration;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Level")
 	int32 CurrentLevelIndex;
@@ -44,6 +61,7 @@ public:
 	void OnLevelTimeUp();
 
 	void EndLevel();
+	// FTimerHandle LevelTimerHandle;
 #pragma endregion
 
 	#pragma region Score
@@ -54,10 +72,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Score")
 	void AddScore(int32 Amount);
 #pragma endregion
-
-
-	FTimerHandle LevelTimerHandle;
-
+	
 	FTimerHandle HUDUpdateTimerHandle;
 	void UpdateHUD();
 };

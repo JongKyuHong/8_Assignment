@@ -3,6 +3,7 @@
 ABigCoinItem::ABigCoinItem()
 {
     PointValue = 50;
+    ExpValue = 20;
     ItemType = "BigCoin";
 }
 

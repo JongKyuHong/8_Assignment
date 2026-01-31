@@ -2,6 +2,8 @@
 #include "Controller/MyPlayerController.h"
 #include "GameState/MyGameState.h"
 #include "EnhancedInputComponent.h"
+#include "AbilitySystemComponent.h"
+#include "GAS/MyAttributeSet.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -27,12 +29,18 @@ AMyCharacter::AMyCharacter()
 
 	MaxHealth = 100.0f;
 	Health = MaxHealth;
+
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AttributeSet = CreateDefaultSubobject<UMyAttributeSet>(TEXT("AttributeSet"));
 }
 
 void AMyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	}
 }
 
 void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

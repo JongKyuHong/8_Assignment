@@ -17,4 +17,7 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     float SpawnChance;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 MinWaveIndex;
 };

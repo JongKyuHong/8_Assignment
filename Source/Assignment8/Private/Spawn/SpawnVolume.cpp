@@ -1,6 +1,7 @@
 ﻿#include "Spawn/SpawnVolume.h"
 #include "Components/BoxComponent.h"
 #include "Engine/World.h"
+#include "GameState/MyGameState.h"
 #include "GameFramework/Actor.h"
 
 ASpawnVolume::ASpawnVolume()
@@ -18,7 +19,13 @@ ASpawnVolume::ASpawnVolume()
 
 AActor* ASpawnVolume::SpawnRandomItem()
 {
-    if (FItemSpawnRow* SelectedRow = GetRandomItem())
+    int32 CurrentWave = 0;
+
+    if (AMyGameState* MyGameState = GetWorld()->GetGameState<AMyGameState>())
+    {
+        CurrentWave = MyGameState->CurrentWaveIndex;
+    }
+    if (FItemSpawnRow* SelectedRow = GetRandomItem(CurrentWave))
     {
         if (UClass* ActualClass = SelectedRow->ItemClass.Get())
         {
@@ -40,7 +47,7 @@ FVector ASpawnVolume::GetRandomPointInVolume() const
     );
 }
 
-FItemSpawnRow* ASpawnVolume::GetRandomItem() const
+FItemSpawnRow* ASpawnVolume::GetRandomItem(int32 CurrentWave) const
 {
     if (!ItemDataTable) return nullptr;
 
@@ -50,24 +57,28 @@ FItemSpawnRow* ASpawnVolume::GetRandomItem() const
 
     if (AllRows.IsEmpty()) return nullptr;
 
+    TArray<const FItemSpawnRow*> ValidRows;
     float TotalChance = 0.0f;
     for (const FItemSpawnRow* Row : AllRows)
     {
-        if (Row)
+        if (Row && CurrentWave >= Row->MinWaveIndex)
         {
+            ValidRows.Add(Row);
             TotalChance += Row->SpawnChance;
         }
     }
 
+    if (ValidRows.IsEmpty() || TotalChance <= 0.0f) return nullptr;
+
     const float RandValue = FMath::FRandRange(0.0f, TotalChance);
     float AccumulateChance = 0.0f;
 
-    for (FItemSpawnRow* Row : AllRows)
+    for (const FItemSpawnRow* Row : ValidRows)
     {
         AccumulateChance += Row->SpawnChance;
         if (RandValue <= AccumulateChance)
         {
-            return Row;
+            return const_cast<FItemSpawnRow*>(Row);
         }
     }
 

@@ -2,6 +2,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Spawn/SpawnVolume.h"
 #include "Item/Coin/CoinItem.h"
+#include "AbilitySystemBlueprintLibrary.h"
+#include "GAS/MyAttributeSet.h"
 #include "Controller/MyPlayerController.h"
 #include "Character/MyCharacter.h"
 #include "GameInstance/MyGameInstance.h"
@@ -14,9 +16,11 @@ AMyGameState::AMyGameState()
     Score = 0;
     SpawnedCoinCount = 0;
     CollectedCoinCount = 0;
-    LevelDuration = 30.f;
+    WaveDuration = 30.f;
     CurrentLevelIndex = 0;
     MaxLevels = 3;
+    CurrentWaveIndex = 0;
+    MaxWaves = 3;
 }
 
 void AMyGameState::BeginPlay()
@@ -60,35 +64,81 @@ void AMyGameState::StartLevel()
         {
             MyPlayerController->ShowGameHUD();
         }
-    }
 
-
-    if (UGameInstance* GameInstance = GetGameInstance())
-    {
-        UMyGameInstance* MyGameInstance = Cast<UMyGameInstance>(GameInstance);
-        if (MyGameInstance)
+        if (UGameInstance* GameInstance = GetGameInstance())
         {
-            CurrentLevelIndex = MyGameInstance->CurrentLevelIndex;
+            UMyGameInstance* MyGameInstance = Cast<UMyGameInstance>(GameInstance);
+            if (MyGameInstance)
+            {
+                CurrentLevelIndex = MyGameInstance->CurrentLevelIndex;
+                if (CurrentLevelIndex == 0)
+                {
+                    MyGameInstance->ResetAllStats();
+                }
+                if (APawn* PlayerPawn = PlayerController->GetPawn())
+                {
+                    if (UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(PlayerPawn))
+                    {
+                        UMyAttributeSet* AS = const_cast<UMyAttributeSet*>(Cast<UMyAttributeSet>(ASC->GetAttributeSet(UMyAttributeSet::StaticClass())));
+
+                        if (AS)
+                        {
+                            AS->SetHealth(MyGameInstance->Health);
+                            AS->SetMaxHealth(MyGameInstance->MaxHealth);
+                            AS->SetMoveSpeed(MyGameInstance->MoveSpeed);
+                            AS->SetJumpZVelocity(MyGameInstance->JumpZVelocity);
+                            AS->SetCharacterScale(MyGameInstance->CharacterScale);
+                            AS->SetExpGainRate(MyGameInstance->ExpGainRate);
+                            AS->SetLevel(MyGameInstance->Level);
+                            AS->SetExp(MyGameInstance->Exp);
+                            AS->SetMaxExp(MyGameInstance->MaxExp);
+                        }
+                    }
+                }
+            }
         }
     }
 
+    StartWave();
+}
+
+
+
+void AMyGameState::OnLevelTimeUp()
+{
+    EndLevel();
+}
+
+void AMyGameState::OnCoinCollected()
+{
+    CollectedCoinCount++;
+
+    //if (SpawnedCoinCount > 0 && CollectedCoinCount >= SpawnedCoinCount)
+    if (SpawnedCoinCount > 0 && CollectedCoinCount >= SpawnedCoinCount)
+    {
+        EndWave();
+        //EndLevel();
+    }
+}
+
+void AMyGameState::StartWave()
+{
     SpawnedCoinCount = 0;
     CollectedCoinCount = 0;
 
     TArray<AActor*> FoundVolumes;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpawnVolume::StaticClass(), FoundVolumes);
 
-    const int32 ItemToSpawn = 40;
+    const int32 ItemToSpawn = 10;
 
-    for (int32 i = 0; i < ItemToSpawn; i++) 
+    for (int32 i = 0; i < ItemToSpawn; i++)
     {
-        if (FoundVolumes.Num() > 0) 
+        if (FoundVolumes.Num() > 0)
         {
             ASpawnVolume* SpawnVolume = Cast<ASpawnVolume>(FoundVolumes[0]);
             if (SpawnVolume)
             {
                 AActor* SpawnedActor = SpawnVolume->SpawnRandomItem();
-                UE_LOG(LogTemp, Warning, TEXT("Spawned Class: %s"), *SpawnedActor->GetClass()->GetName());
                 if (SpawnedActor && SpawnedActor->IsA(ACoinItem::StaticClass()))
                 {
                     SpawnedCoinCount++;
@@ -98,34 +148,49 @@ void AMyGameState::StartLevel()
     }
 
     GetWorldTimerManager().SetTimer(
-        LevelTimerHandle,
+        WaveTimerHandle,
         this,
-        &AMyGameState::OnLevelTimeUp,
-        LevelDuration,
+        &AMyGameState::OnWaveTimeUp,
+        WaveDuration,
         false
     );
+
+    //ShowPerkMenu();
 }
 
-void AMyGameState::OnLevelTimeUp()
+void AMyGameState::ShowPerkMenu() const
 {
-    // 얻은 코인의 개수가 스폰된것과 같으면 종료
-    EndLevel();
+    if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
+    {
+        if (AMyPlayerController* MyPlayerController = Cast<AMyPlayerController>(PlayerController))
+        {
+            MyPlayerController->ShowPerkUI();
+        }
+    }
 }
 
-void AMyGameState::OnCoinCollected()
+void AMyGameState::OnWaveTimeUp()
 {
-    CollectedCoinCount++;
+    EndWave();
+}
 
-    if (SpawnedCoinCount > 0 && CollectedCoinCount >= SpawnedCoinCount)
+void AMyGameState::EndWave()
+{
+    GetWorldTimerManager().ClearTimer(WaveTimerHandle);
+    // 3웨이브를 다 겪었다면 다음 레벨로
+    CurrentWaveIndex++;
+    if (CurrentWaveIndex >= MaxWaves) 
     {
         EndLevel();
+    }
+    else 
+    {
+        StartWave();
     }
 }
 
 void AMyGameState::EndLevel()
 {
-    GetWorldTimerManager().ClearTimer(LevelTimerHandle);
-
     if (UGameInstance* GameInstance = GetGameInstance())
     {
         UMyGameInstance* MyGameInstance = Cast<UMyGameInstance>(GameInstance);
@@ -135,6 +200,28 @@ void AMyGameState::EndLevel()
             CurrentLevelIndex++;
             MyGameInstance->CurrentLevelIndex = CurrentLevelIndex;
 
+            if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
+            {
+                if (APawn* PlayerPawn = PlayerController->GetPawn()) 
+                {
+                    if (UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(PlayerPawn))
+                    {
+                        const UMyAttributeSet* AttributeSet = Cast<UMyAttributeSet>(ASC->GetAttributeSet(UMyAttributeSet::StaticClass()));
+                        if (AttributeSet)
+                        {
+                            MyGameInstance->Health = AttributeSet->GetHealth();
+                            MyGameInstance->MaxHealth = AttributeSet->GetMaxHealth();
+                            MyGameInstance->MoveSpeed = AttributeSet->GetMoveSpeed();
+                            MyGameInstance->JumpZVelocity = AttributeSet->GetJumpZVelocity();
+                            MyGameInstance->CharacterScale = AttributeSet->GetCharacterScale();
+                            MyGameInstance->ExpGainRate = AttributeSet->GetExpGainRate();
+                            MyGameInstance->Level = AttributeSet->GetLevel();
+                            MyGameInstance->Exp = AttributeSet->GetExp();
+                            MyGameInstance->MaxExp = AttributeSet->GetMaxExp();
+                        }
+                    }
+                }
+            }
             if (CurrentLevelIndex >= MaxLevels)
             {
                 OnGameOver();
@@ -174,7 +261,7 @@ void AMyGameState::UpdateHUD()
             {
                 if (UTextBlock* TimeText = Cast<UTextBlock>(HUDWidget->GetWidgetFromName(TEXT("Time"))))
                 {
-                    float RemainingTime = GetWorldTimerManager().GetTimerRemaining(LevelTimerHandle);
+                    float RemainingTime = GetWorldTimerManager().GetTimerRemaining(WaveTimerHandle);
                     TimeText->SetText(FText::FromString(FString::Printf(TEXT("Time: %.f"), RemainingTime)));
                 }
 
@@ -208,8 +295,14 @@ void AMyGameState::UpdateHUD()
 
                 if (UTextBlock* LevelIndexText = Cast<UTextBlock>(HUDWidget->GetWidgetFromName(TEXT("Level"))))
                 {
-                    LevelIndexText->SetText(FText::FromString(FString::Printf(TEXT("Level: %d"), CurrentLevelIndex + 1)));
+                    LevelIndexText->SetText(FText::FromString(FString::Printf(TEXT("Level: %d - %d"), CurrentLevelIndex + 1, CurrentWaveIndex+1)));
                 }
+
+                // 캐릭터 레벨이랑 체력은 캐릭터위에 뜨게 하자
+                /*if (UTextBlock* WaveIndexText = Cast<UTextBlock>(HUDWidget->GetWidgetFromName(TEXT("Character Level"))))
+                {
+                    WaveIndexText->SetText(FText::FromString(FString::Printf(TEXT("Wave: %d"), CurrentWaveIndex + 1)));
+                }*/
             }
         }
     }

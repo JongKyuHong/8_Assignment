@@ -27,7 +27,7 @@ protected:
     UDataTable* ItemDataTable;
 
     FVector GetRandomPointInVolume() const;
-    FItemSpawnRow* GetRandomItem() const;
+    FItemSpawnRow* GetRandomItem(int32 CurrentWave) const;
     
     AActor* SpawnItem(TSubclassOf<AActor> ItemClass);
 };

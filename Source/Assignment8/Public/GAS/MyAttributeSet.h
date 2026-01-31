@@ -43,5 +43,17 @@ public:
 	FGameplayAttributeData ExpGainRate;
 	ATTRIBUTE_ACCESSORS(UMyAttributeSet, ExpGainRate)
 
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes")
+	FGameplayAttributeData Level;
+	ATTRIBUTE_ACCESSORS(UMyAttributeSet, Level)
+
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes")
+	FGameplayAttributeData Exp;
+	ATTRIBUTE_ACCESSORS(UMyAttributeSet, Exp)
+
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes")
+	FGameplayAttributeData MaxExp;
+	ATTRIBUTE_ACCESSORS(UMyAttributeSet, MaxExp)
+
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 };
