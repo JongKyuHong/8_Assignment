@@ -1,4 +1,5 @@
 #include "GAS/MyAttributeSet.h"
+#include "Character/MyCharacter.h"
 #include "GameState/MyGameState.h"
 #include "GameplayEffect.h"
 #include "GameFramework/Character.h"
@@ -7,10 +8,9 @@
 
 UMyAttributeSet::UMyAttributeSet()
 {
-	InitHealth(100.0f);
 	InitMaxHealth(100.0f);
-	InitMoveSpeed(400.0f);
-	InitJumpZVelocity(400.0f);
+	InitMoveSpeed(600.0f);
+	InitJumpZVelocity(300.0f);
 	InitCharacterScale(1.0f);
 	InitExpGainRate(1.0f);
 	InitLevel(1.0f);
@@ -21,8 +21,8 @@ UMyAttributeSet::UMyAttributeSet()
 void UMyAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {
 	Super::PostGameplayEffectExecute(Data);
-
 	const FGameplayAttribute ModifiedAttribute = Data.EvaluatedData.Attribute;
+	UE_LOG(LogTemp, Warning, TEXT("Modified Attribute Name: %s"), *ModifiedAttribute.GetName());
 	AActor* TargetActor = Data.Target.GetAvatarActor();
 	ACharacter* TargetChar = Cast<ACharacter>(TargetActor);
 
@@ -32,9 +32,23 @@ void UMyAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallback
 	{
 		SetHealth(FMath::Clamp(GetHealth(), 0.0f, GetMaxHealth()));
 	}
+	else if (ModifiedAttribute == GetMaxHealthAttribute())
+	{
+		AMyCharacter* MyCharacter = Cast<AMyCharacter>(TargetActor);
+		if (MyCharacter)
+		{
+			MyCharacter->UpdateOverheadBar();
+		}
+	}
 	else if (ModifiedAttribute == GetMoveSpeedAttribute() && TargetChar)
 	{
-		TargetChar->GetCharacterMovement()->MaxWalkSpeed = GetMoveSpeed();
+		if (TargetChar && TargetChar->GetCharacterMovement())
+		{
+			float FinalValue = GetMoveSpeed();
+			TargetChar->GetCharacterMovement()->MaxWalkSpeed = FinalValue;
+
+			UE_LOG(LogTemp, Warning, TEXT("Current MoveSpeed Attribute: %f"), FinalValue);
+		}
 	}
 	else if (ModifiedAttribute == GetJumpZVelocityAttribute() && TargetChar)
 	{
@@ -63,10 +77,25 @@ void UMyAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallback
 			{
 				MyGameState->ShowPerkMenu();
 			}
-			UE_LOG(LogTemp, Warning, TEXT("Level Up! Current Level: %d"), (int32)NewLevel);
 		}
 
 		SetExp(FMath::Max(GetExp(), 0.0f));
 	}
+
 }
 
+void UMyAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue)
+{
+	Super::PostAttributeChange(Attribute, OldValue, NewValue);
+
+	if (Attribute == GetMoveSpeedAttribute())
+	{
+		AActor* TargetActor = GetOwningAbilitySystemComponent()->GetAvatarActor();
+		ACharacter* TargetChar = Cast<ACharacter>(TargetActor);
+
+		if (TargetChar && TargetChar->GetCharacterMovement())
+		{
+			TargetChar->GetCharacterMovement()->MaxWalkSpeed = NewValue;
+		}
+	}
+}

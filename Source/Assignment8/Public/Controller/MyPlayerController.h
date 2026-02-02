@@ -17,70 +17,68 @@ public:
 	AMyPlayerController();
 
 	#pragma region Input
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
-	UInputMappingContext* InputMappingContext;
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+		UInputMappingContext* InputMappingContext;
 
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
-	UInputAction* MoveAction;
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+		UInputAction* MoveAction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
-	UInputAction* JumpAction;
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+		UInputAction* JumpAction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
-	UInputAction* LookAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
-	UInputAction* SprintAction;
-#pragma endregion
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+		UInputAction* LookAction;
+	#pragma endregion
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="UI")
 	TSubclassOf<UUserWidget> HUDWidgetClass;
 
 	#pragma region HUD
-		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HUD")
-		UUserWidget* HUDWidgetInstance;
+			UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HUD")
+			UUserWidget* HUDWidgetInstance;
 
-		UFUNCTION(BlueprintPure, Category = "HUD")
-		UUserWidget* GetHUDWidget() const;
+			UFUNCTION(BlueprintPure, Category = "HUD")
+			UUserWidget* GetHUDWidget() const;
 
-		UFUNCTION(BlueprintCallable, Category = "HUD")
-		void ShowGameHUD();
+			UFUNCTION(BlueprintCallable, Category = "HUD")
+			void ShowGameHUD();
 	#pragma endregion
 
 	#pragma region Menu
-		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Menu")
-		TSubclassOf<UUserWidget> MainMenuWidgetClass;
+			UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Menu")
+			TSubclassOf<UUserWidget> MainMenuWidgetClass;
 
-		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Menu")
-		UUserWidget* MainMenuWidgetInstance;
+			UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Menu")
+			UUserWidget* MainMenuWidgetInstance;
 
 
-		UFUNCTION(BlueprintCallable, Category = "Menu")
-		void ShowMainMenu(bool bIsRestart);
+			UFUNCTION(BlueprintCallable, Category = "Menu")
+			void ShowMainMenu(bool bIsRestart);
 
-		UFUNCTION(BlueprintCallable, Category = "Menu")
-		void StartGame();
+			UFUNCTION(BlueprintCallable, Category = "Menu")
+			void StartGame();
 	#pragma endregion
 
 
 	#pragma region Perk
-		UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI|Perk")
-		TSubclassOf<UUserWidget> PerkWidgetClass;
+			UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI|Perk")
+			TSubclassOf<UUserWidget> PerkWidgetClass;
 
-		UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI|Perk")
-		UUserWidget* PerkWidgetInstance;
+			UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI|Perk")
+			UUserWidget* PerkWidgetInstance;
 
-		UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI|Perk")
-		UPerkDataAsset* MyPerkDataAsset;
+			UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI|Perk")
+			UPerkDataAsset* MyPerkDataAsset;
 
-		UPROPERTY(EditAnywhere, Category="UI|Perk")
-		UPerkManagerComponent* PerkManager;
+			UPROPERTY(EditAnywhere, Category="UI|Perk")
+			UPerkManagerComponent* PerkManager;
 
-		UFUNCTION(BlueprintCallable, Category = "UI|Perk")
-		void ShowPerkUI();
+			UFUNCTION(BlueprintCallable, Category = "UI|Perk")
+			void ShowPerkUI();
 	#pragma endregion
 
+	void PlayWaveStartUI();
 	virtual void BeginPlay() override;
 	
 };

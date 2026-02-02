@@ -7,6 +7,10 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/WidgetComponent.h"
+#include "Components/TextBlock.h"
+#include "Components/ProgressBar.h"
+
 
 AMyCharacter::AMyCharacter()
 {
@@ -21,14 +25,12 @@ AMyCharacter::AMyCharacter()
 	CameraComp->SetupAttachment(SpringArmComp, USpringArmComponent::SocketName);
 	CameraComp->bUsePawnControlRotation = false;
 
-	NormalSpeed = 600.0f;
-	SprintSpeedMultiplier = 1.5f;
-	SprintSpeed = NormalSpeed * SprintSpeedMultiplier;
+	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
+	OverheadWidget->SetupAttachment(GetMesh());
+	OverheadWidget->SetWidgetSpace(EWidgetSpace::Screen);
 
-	GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
-
-	MaxHealth = 100.0f;
-	Health = MaxHealth;
+	/*MaxHealth = 100.0f;
+	Health = MaxHealth;*/
 
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	AttributeSet = CreateDefaultSubobject<UMyAttributeSet>(TEXT("AttributeSet"));
@@ -40,7 +42,26 @@ void AMyCharacter::BeginPlay()
 	if (AbilitySystemComponent)
 	{
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+			AttributeSet->GetHealthAttribute()).AddUObject(this, &AMyCharacter::OnHealthChanged);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+			AttributeSet->GetExpAttribute()).AddUObject(this, &AMyCharacter::OnExpChanged);
 	}
+	UpdateOverheadBar();
+}
+
+void AMyCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
+{
+	UpdateOverheadBar();
+	if (Data.NewValue <= 0.0f)
+	{
+		OnDeath();
+	}
+}
+
+void AMyCharacter::OnExpChanged(const FOnAttributeChangeData& Data)
+{
+	UpdateOverheadBar();
 }
 
 void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -85,23 +106,6 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 					ETriggerEvent::Triggered,
 					this,
 					&AMyCharacter::Look
-				);
-			}
-
-			if (PlayerController->SprintAction)
-			{
-				EnhancedInput->BindAction(
-					PlayerController->SprintAction,
-					ETriggerEvent::Triggered,
-					this,
-					&AMyCharacter::StartSprint
-				);
-
-				EnhancedInput->BindAction(
-					PlayerController->SprintAction,
-					ETriggerEvent::Completed,
-					this,
-					&AMyCharacter::StopSprint
 				);
 			}
 		}
@@ -150,39 +154,9 @@ void AMyCharacter::Look(const FInputActionValue& value)
 	AddControllerPitchInput(LookInput.Y);
 }
 
-void AMyCharacter::StartSprint(const FInputActionValue& value)
-{
-	if (GetCharacterMovement())
-	{
-		GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
-	}
-}
-
-void AMyCharacter::StopSprint(const FInputActionValue& value)
-{
-	if (GetCharacterMovement())
-	{
-		GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
-	}
-}
-
 void AMyCharacter::AddHealth(float Amount)
 {
 	Health = FMath::Clamp(Health + Amount, 0.0f, MaxHealth);
-}
-
-float AMyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
-{
-	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-
-	Health = FMath::Clamp(Health - DamageAmount, 0.0f, MaxHealth);
-
-	if (Health <= 0.0f)
-	{
-		OnDeath();
-	}
-
-	return ActualDamage;
 }
 
 void AMyCharacter::OnDeath()
@@ -197,4 +171,30 @@ void AMyCharacter::OnDeath()
 int32 AMyCharacter::GetHealth() const
 {
 	return Health;
+}
+
+
+void AMyCharacter::UpdateOverheadBar()
+{
+	if (!OverheadWidget) return;
+
+	UUserWidget* OverheadWidgetInstance = OverheadWidget->GetUserWidgetObject();
+	if (!OverheadWidgetInstance) return;
+	
+	if (UProgressBar* HealthBar = Cast<UProgressBar>(OverheadWidgetInstance->GetWidgetFromName(TEXT("OverHeadHP"))))
+	{
+		float CurrentHealth = AttributeSet->GetHealth();
+		float MaxHP = AttributeSet->GetMaxHealth();
+		float HealthRatio = MaxHP > 0 ? CurrentHealth / MaxHP : 0.f;
+
+		HealthBar->SetPercent(HealthRatio);
+	}
+	if (UProgressBar* ExpBar = Cast<UProgressBar>(OverheadWidgetInstance->GetWidgetFromName(TEXT("OverHeadExp"))))
+	{
+		float CurrentExp = AttributeSet->GetExp();
+		float MaxExp = AttributeSet->GetMaxExp();
+		float ExpRatio = MaxExp > 0 ? CurrentExp / MaxExp : 0.f;
+
+		ExpBar->SetPercent(ExpRatio);
+	}
 }

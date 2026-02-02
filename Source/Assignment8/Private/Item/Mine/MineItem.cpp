@@ -1,6 +1,8 @@
 ﻿#include "Item/Mine/MineItem.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/SphereComponent.h"
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemInterface.h"
 #include "Particles/ParticleSystemComponent.h"
 
 AMineItem::AMineItem()
@@ -20,11 +22,7 @@ AMineItem::AMineItem()
 void AMineItem::ActivateItem(AActor* Activator)
 {
 	// 이미 작동하고 있으면 무시
-	if (bHasExploded)
-	{
-		return;
-	}
-
+	if (bHasExploded) return;
 	bHasExploded = true;
 
 	Super::ActivateItem(Activator);
@@ -68,17 +66,23 @@ void AMineItem::Explode()
 	{
 		if (Actor && Actor->ActorHasTag("Player"))
 		{
-			UGameplayStatics::ApplyDamage(
-				Actor,                      
-				ExplosionDamage,            
-				nullptr,                    
-				this,                       
-				UDamageType::StaticClass() 
-			);
+			if (IAbilitySystemInterface* ASCHolder = Cast<IAbilitySystemInterface>(Actor))
+			{
+				UAbilitySystemComponent* TargetASC = ASCHolder->GetAbilitySystemComponent();
+				if (TargetASC && ExplosionDamageGE)
+				{
+					FGameplayEffectContextHandle ContextHandle = TargetASC->MakeEffectContext();
+					ContextHandle.AddInstigator(this, this);
+
+					FGameplayEffectSpecHandle SpecHandle = TargetASC->MakeOutgoingSpec(ExplosionDamageGE, 1.0f, ContextHandle);
+					if (SpecHandle.IsValid())
+					{
+						TargetASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+					}
+				}
+			}
 		}
 	}
-
-	DestroyItem();
 
 	if (Particle)
 	{
@@ -98,4 +102,6 @@ void AMineItem::Explode()
 			false
 		);
 	}
+
+	DestroyItem();
 }

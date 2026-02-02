@@ -4,6 +4,7 @@
 #include "Item/BaseItem.h"
 #include "MineItem.generated.h"
 
+class UGameplayEffect;
 
 UCLASS()
 class ASSIGNMENT8_API AMineItem : public ABaseItem
@@ -11,6 +12,7 @@ class ASSIGNMENT8_API AMineItem : public ABaseItem
 	GENERATED_BODY()
 public:
     AMineItem();
+
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item|Component")
     USphereComponent* ExplosionCollision;
@@ -32,6 +34,9 @@ public:
     int ExplosionDamage;
 
     FTimerHandle ExplosionTimerHandle;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mine|GAS")
+    TSubclassOf<UGameplayEffect> ExplosionDamageGE;
 
     virtual void ActivateItem(AActor* Activator) override;
 

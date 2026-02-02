@@ -3,12 +3,14 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
 #include "GameFramework/Character.h"
+#include "GameplayEffectTypes.h"
 #include "MyCharacter.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
 class UAbilitySystemComponent;
 class UMyAttributeSet;
+class UWidgetComponent;
 struct FInputActionValue;
 
 UCLASS()
@@ -23,6 +25,8 @@ public:
 	USpringArmComponent* SpringArmComp;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	UCameraComponent* CameraComp;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	UWidgetComponent* OverheadWidget;
 #pragma region Health
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
 	float MaxHealth;
@@ -49,26 +53,16 @@ public:
 	void StopJump(const FInputActionValue& value);
 	UFUNCTION()
 	void Look(const FInputActionValue& value);
-	UFUNCTION()
-	void StartSprint(const FInputActionValue& value);
-	UFUNCTION()
-	void StopSprint(const FInputActionValue& value);
-#pragma endregion
-
-#pragma region Movement
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	float NormalSpeed;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	float SprintSpeedMultiplier;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
-	float SprintSpeed;
 #pragma endregion
 
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	UPROPERTY()
 	TObjectPtr<UMyAttributeSet> AttributeSet;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	void UpdateOverheadBar();
+	void OnExpChanged(const FOnAttributeChangeData& Data);
+	void OnHealthChanged(const FOnAttributeChangeData& Data);
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
 	class UAbilitySystemComponent* AbilitySystemComponent;

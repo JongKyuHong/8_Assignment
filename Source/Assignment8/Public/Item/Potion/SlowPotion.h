@@ -1,13 +1,16 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "Item/BaseItem.h"
-#include "HealingItem.generated.h"
+#include "SlowPotion.generated.h"
+
+class UGameplayEffect;
 
 UCLASS()
-class ASSIGNMENT8_API AHealingItem : public ABaseItem
+class ASSIGNMENT8_API ASlowPotion : public ABaseItem
 {
 	GENERATED_BODY()
-public:
+
+protected:
 	virtual void ActivateItem(AActor* Activator) override;
 };

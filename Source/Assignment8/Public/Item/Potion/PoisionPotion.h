@@ -1,13 +1,13 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "Item/BaseItem.h"
-#include "HealingItem.generated.h"
+#include "PoisionPotion.generated.h"
 
 UCLASS()
-class ASSIGNMENT8_API AHealingItem : public ABaseItem
+class ASSIGNMENT8_API APoisionPotion : public ABaseItem
 {
 	GENERATED_BODY()
-public:
+protected:
 	virtual void ActivateItem(AActor* Activator) override;
 };

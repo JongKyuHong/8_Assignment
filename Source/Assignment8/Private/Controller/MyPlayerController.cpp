@@ -14,7 +14,6 @@ AMyPlayerController::AMyPlayerController() :
     MoveAction(nullptr),
     JumpAction(nullptr),
     LookAction(nullptr),
-    SprintAction(nullptr),
     HUDWidgetClass(nullptr),
     HUDWidgetInstance(nullptr),
     MainMenuWidgetClass(nullptr),
@@ -126,6 +125,10 @@ void AMyPlayerController::ShowGameHUD()
         SetPause(false);
         PerkWidgetInstance->RemoveFromParent();
         PerkWidgetInstance = nullptr;
+        if (AMyGameState* GS = GetWorld()->GetGameState<AMyGameState>())
+        {
+            GetWorldTimerManager().UnPauseTimer(GS->HUDUpdateTimerHandle);
+        }
     }
 
     if (HUDWidgetClass)
@@ -144,6 +147,19 @@ void AMyPlayerController::ShowGameHUD()
             {
                 MyGameState->UpdateHUD();
             }
+        }
+    }
+}
+
+void AMyPlayerController::PlayWaveStartUI()
+{
+    UE_LOG(LogTemp, Warning, TEXT("HUDWidgetInstance : %s"), *HUDWidgetInstance->GetName());
+    if (HUDWidgetInstance)
+    {
+        UFunction* PlayAnimFunc = HUDWidgetInstance->FindFunction(FName("WaveStartAnim"));
+        if (PlayAnimFunc)
+        {
+            HUDWidgetInstance->ProcessEvent(PlayAnimFunc, nullptr);
         }
     }
 }
@@ -180,6 +196,10 @@ void AMyPlayerController::ShowPerkUI()
             SetInputMode(FInputModeUIOnly());
             bShowMouseCursor = true;
             SetPause(true);
+            if (AMyGameState* GS = GetWorld()->GetGameState<AMyGameState>())
+            {
+                GetWorldTimerManager().PauseTimer(GS->HUDUpdateTimerHandle);
+            }
         }
     }
 }

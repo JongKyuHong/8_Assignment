@@ -10,6 +10,7 @@
 #include "Components/TextBlock.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/ProgressBar.h"
+#include "Misc/OutputDeviceNull.h"
 
 AMyGameState::AMyGameState()
 {
@@ -43,6 +44,7 @@ int32 AMyGameState::GetScore() const
     return Score;
 }
 
+// 게임 인스턴스에 스코어 추가
 void AMyGameState::AddScore(int32 Amount)
 {
     if (UGameInstance* GameInstance = GetGameInstance())
@@ -56,6 +58,7 @@ void AMyGameState::AddScore(int32 Amount)
 }
 
 
+// 레벨 스타트, 한개의 레벨에는 3개의 웨이브가 있고 총 3레벨 까지 있음
 void AMyGameState::StartLevel()
 {
     if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
@@ -92,6 +95,12 @@ void AMyGameState::StartLevel()
                             AS->SetLevel(MyGameInstance->Level);
                             AS->SetExp(MyGameInstance->Exp);
                             AS->SetMaxExp(MyGameInstance->MaxExp);
+
+                            float ScaleValue = MyGameInstance->CharacterScale;
+                            if (ScaleValue > 0.0f)
+                            {
+                                PlayerPawn->SetActorScale3D(FVector(ScaleValue));
+                            }
                         }
                     }
                 }
@@ -102,8 +111,6 @@ void AMyGameState::StartLevel()
     StartWave();
 }
 
-
-
 void AMyGameState::OnLevelTimeUp()
 {
     EndLevel();
@@ -112,12 +119,9 @@ void AMyGameState::OnLevelTimeUp()
 void AMyGameState::OnCoinCollected()
 {
     CollectedCoinCount++;
-
-    //if (SpawnedCoinCount > 0 && CollectedCoinCount >= SpawnedCoinCount)
     if (SpawnedCoinCount > 0 && CollectedCoinCount >= SpawnedCoinCount)
     {
-        EndWave();
-        //EndLevel();
+        GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AMyGameState::EndWave);
     }
 }
 
@@ -129,7 +133,7 @@ void AMyGameState::StartWave()
     TArray<AActor*> FoundVolumes;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpawnVolume::StaticClass(), FoundVolumes);
 
-    const int32 ItemToSpawn = 10;
+    const int32 ItemToSpawn = (CurrentWaveIndex + 10) * (CurrentLevelIndex + 4);
 
     for (int32 i = 0; i < ItemToSpawn; i++)
     {
@@ -147,6 +151,32 @@ void AMyGameState::StartWave()
         }
     }
 
+    FString WaveMessage = TEXT("");
+    if (CurrentWaveIndex == 1)
+    {
+        WaveMessage = TEXT("Slow Potion이 추가되었습니다.");
+    }
+    else if (CurrentWaveIndex == 2)
+    {
+        WaveMessage = TEXT("Poision Potion이 추가되었습니다.");
+    }
+
+    if (!WaveMessage.IsEmpty())
+    {
+        if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+        {
+            if (AMyPlayerController* MyPC = Cast<AMyPlayerController>(PC))
+            {
+                if (UUserWidget* HUDWidget = MyPC->GetHUDWidget())
+                {
+                    FOutputDeviceNull ar;
+                    FString Command = FString::Printf(TEXT("ShowNotification \"%s\""), *WaveMessage);
+                    HUDWidget->CallFunctionByNameWithArguments(*Command, ar, NULL, true);
+                }
+            }
+        }
+    }
+
     GetWorldTimerManager().SetTimer(
         WaveTimerHandle,
         this,
@@ -155,9 +185,16 @@ void AMyGameState::StartWave()
         false
     );
 
-    //ShowPerkMenu();
+    if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+    {
+        if (AMyPlayerController* MyPC = Cast<AMyPlayerController>(PC))
+        {
+            MyPC->PlayWaveStartUI();
+        }
+    }
 }
 
+// 증강을 고르는 UI띄우기
 void AMyGameState::ShowPerkMenu() const
 {
     if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
@@ -191,6 +228,7 @@ void AMyGameState::EndWave()
 
 void AMyGameState::EndLevel()
 {
+    if (CurrentLevelIndex >= MaxLevels) return;
     if (UGameInstance* GameInstance = GetGameInstance())
     {
         UMyGameInstance* MyGameInstance = Cast<UMyGameInstance>(GameInstance);
@@ -198,8 +236,16 @@ void AMyGameState::EndLevel()
         {
             AddScore(Score);
             CurrentLevelIndex++;
+
+            if (CurrentLevelIndex >= MaxLevels)
+            {
+                OnGameOver();
+                return;
+            }
+
             MyGameInstance->CurrentLevelIndex = CurrentLevelIndex;
 
+            // 게임 인스턴스에 정보 저장
             if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
             {
                 if (APawn* PlayerPawn = PlayerController->GetPawn()) 
@@ -211,7 +257,8 @@ void AMyGameState::EndLevel()
                         {
                             MyGameInstance->Health = AttributeSet->GetHealth();
                             MyGameInstance->MaxHealth = AttributeSet->GetMaxHealth();
-                            MyGameInstance->MoveSpeed = AttributeSet->GetMoveSpeed();
+                            //MyGameInstance->MoveSpeed = AttributeSet->GetMoveSpeed();
+                            MyGameInstance->MoveSpeed = ASC->GetNumericAttributeBase(UMyAttributeSet::GetMoveSpeedAttribute());
                             MyGameInstance->JumpZVelocity = AttributeSet->GetJumpZVelocity();
                             MyGameInstance->CharacterScale = AttributeSet->GetCharacterScale();
                             MyGameInstance->ExpGainRate = AttributeSet->GetExpGainRate();
@@ -222,12 +269,7 @@ void AMyGameState::EndLevel()
                     }
                 }
             }
-            if (CurrentLevelIndex >= MaxLevels)
-            {
-                OnGameOver();
-                return;
-            }
-
+            
             if (LevelMapNames.IsValidIndex(CurrentLevelIndex))
             {
                 UGameplayStatics::OpenLevel(GetWorld(), LevelMapNames[CurrentLevelIndex]);
@@ -277,32 +319,10 @@ void AMyGameState::UpdateHUD()
                     }
                 }
 
-                if (UProgressBar* HealthBar = Cast<UProgressBar>(HUDWidget->GetWidgetFromName(TEXT("HealthBar"))))
-                {
-                    if (APawn* PlayerPawn = MyPlayerController->GetPawn())
-                    {
-                        if (AMyCharacter* PlayerCharacter = Cast<AMyCharacter>(PlayerPawn))
-                        {
-                            float CurrentHP = PlayerCharacter->GetHealth();
-                            float MaxHP = PlayerCharacter->MaxHealth;
-
-                            float HealthRatio = MaxHP > 0 ? CurrentHP / MaxHP : 0.f;
-
-                            HealthBar->SetPercent(HealthRatio);
-                        }
-                    }
-                }
-
                 if (UTextBlock* LevelIndexText = Cast<UTextBlock>(HUDWidget->GetWidgetFromName(TEXT("Level"))))
                 {
                     LevelIndexText->SetText(FText::FromString(FString::Printf(TEXT("Level: %d - %d"), CurrentLevelIndex + 1, CurrentWaveIndex+1)));
                 }
-
-                // 캐릭터 레벨이랑 체력은 캐릭터위에 뜨게 하자
-                /*if (UTextBlock* WaveIndexText = Cast<UTextBlock>(HUDWidget->GetWidgetFromName(TEXT("Character Level"))))
-                {
-                    WaveIndexText->SetText(FText::FromString(FString::Printf(TEXT("Wave: %d"), CurrentWaveIndex + 1)));
-                }*/
             }
         }
     }

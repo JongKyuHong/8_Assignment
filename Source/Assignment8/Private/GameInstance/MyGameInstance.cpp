@@ -17,7 +17,8 @@ void UMyGameInstance::ResetAllStats()
     CurrentLevelIndex = 0;
     Health = 100.0f;
     MaxHealth = 100.0f;
-    MoveSpeed = 400.0f;
+    MoveSpeed = 600.0f;
+    JumpZVelocity = 300.0f;
     CharacterScale = 1.0f;
     ExpGainRate = 1.0f;
     Level = 1.0f;

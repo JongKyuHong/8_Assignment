@@ -22,6 +22,12 @@ struct FPerkInfo
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FText PerkNames; 
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UTexture2D* Icon; // 증강 이미지
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FLinearColor FrameColor; // 프레임색
+
 	// 이 Perk과 연동된 Gameplay Effect클래스
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<class UGameplayEffect> PerkEffectClass;
