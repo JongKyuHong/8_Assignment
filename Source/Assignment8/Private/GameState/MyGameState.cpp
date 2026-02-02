@@ -133,7 +133,7 @@ void AMyGameState::StartWave()
     TArray<AActor*> FoundVolumes;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpawnVolume::StaticClass(), FoundVolumes);
 
-    const int32 ItemToSpawn = (CurrentWaveIndex + 10) * (CurrentLevelIndex + 4);
+    const int32 ItemToSpawn = (CurrentWaveIndex + 10) * ((CurrentLevelIndex + 1) * 3);
 
     for (int32 i = 0; i < ItemToSpawn; i++)
     {

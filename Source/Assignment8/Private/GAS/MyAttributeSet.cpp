@@ -70,7 +70,7 @@ void UMyAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallback
 			float RemainingExp = GetExp() - GetMaxExp();
 			float NewLevel = GetLevel() + 1.0f;
 			SetLevel(NewLevel);
-			SetMaxExp(NewLevel * 100.0f);
+			SetMaxExp(NewLevel * 50.0f);
 			SetExp(RemainingExp);
 			AMyGameState* MyGameState = GetWorld() ? GetWorld()->GetGameState<AMyGameState>() : nullptr;
 			if (MyGameState)
